@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="睡眠">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="theme-color" content="#17121a">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<title>睡眠记录</title>
+<style>
+:root{
+  /* iOS-style layout: large titles, inset cards, bottom tabs.
+     colour: a pink-violet sunset seen through classroom windows - coral-pink sky, peach glow, cream horizon,
+     lavender clouds, dark window frames and silhouettes in front. Single dark theme on purpose: it is used at night. */
+  --bg:#17121a; --card:#231b26; --fill:rgba(255,226,236,.08); --fill2:rgba(255,226,236,.15);
+  --label:#f6eaee; --label2:#ab97a5; --label3:#715f6c; --sep:#3a2e3c;
+  --accent:#f293a6; --moon:#f9dca0; --mauve:#b394d6; --danger:#ff6b6b; --frame:#120d14;
+  --ui:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Hiragino Sans GB","Noto Sans SC",system-ui,sans-serif;
+  --serif:"Songti SC","STSong","Noto Serif SC",serif;
+  --round:ui-rounded,"SF Pro Rounded","SF Compact Rounded",-apple-system,BlinkMacSystemFont,"PingFang SC",system-ui,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{background:var(--bg);position:relative;color:var(--label);font-family:var(--ui);font-size:17px;line-height:1.35;-webkit-font-smoothing:antialiased;overscroll-behavior-y:none;-webkit-user-select:none;user-select:none}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+main{max-width:600px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 8px) 16px calc(env(safe-area-inset-bottom) + 96px)}
+.view{display:none}
+.view.on{display:block}
+.lt{font-family:var(--serif);font-size:34px;font-weight:700;letter-spacing:.06em;margin:10px 4px 0;line-height:1.2}
+.sub{color:var(--label2);font-size:15px;margin:2px 4px 18px}
+.gt{font-size:13px;color:var(--label2);margin:24px 16px 7px;letter-spacing:.02em}
+.gf{font-size:13px;color:var(--label2);margin:8px 16px 0;line-height:1.45}
+.card{background:var(--card);border-radius:14px;overflow:hidden}
+.pad{padding:16px}
+.row{display:flex;align-items:center;gap:12px;padding:11px 16px;min-height:50px;width:100%;text-align:left;position:relative}
+.row+.row::before{content:"";position:absolute;top:0;right:0;left:16px;height:.5px;background:var(--sep)}
+.row .grow{flex:1;min-width:0}
+.row .val{color:var(--label2);font-variant-numeric:tabular-nums;white-space:nowrap}
+.chev{color:var(--label3);font-size:20px;line-height:1}
+.tap:active{background:var(--fill)}
+.primary{display:block;width:100%;background:var(--accent);color:#17121a;border-radius:14px;padding:15px;font-size:17px;font-weight:600;text-align:center}
+.primary:active,.secondary:active{opacity:.8}
+.secondary{display:block;width:100%;background:var(--fill);color:var(--accent);border-radius:14px;padding:15px;font-size:17px;font-weight:600;text-align:center}
+.btns{display:flex;flex-direction:column;gap:10px;margin-top:16px}
+.danger{color:var(--danger)}
+
+/* home: like a lock screen - the big rounded numbers sit straight on the wallpaper, a glass card under them */
+.hero{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;padding:22px 0 30px}
+.hero small{font-size:16px;font-weight:500}
+.hero b{font-family:var(--round);font-size:min(25vw,104px);font-weight:700;line-height:1.05;font-variant-numeric:tabular-nums}
+.hero span{font-family:var(--round);font-size:18px;font-weight:600;font-variant-numeric:tabular-nums}
+.wpnext{position:absolute;right:0;top:0;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:rgba(35,27,38,.5);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);color:#fff}
+.wpnext svg{width:19px;height:19px}
+.wpnext:active{opacity:.7}
+.sum{display:flex;align-items:center;gap:16px;padding:14px 16px}
+.sum svg{width:118px;height:118px;flex:none}
+.facts{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:12px 10px;min-width:0}
+.facts div{display:flex;flex-direction:column;min-width:0}
+.facts small{font-size:12px;color:var(--label2)}
+.facts b{font-family:var(--round);font-size:19px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+b i{font-style:normal;font-family:var(--ui);font-size:.6em;font-weight:600;margin:0 1px;opacity:.85}
+.hint{text-align:center;font-size:14px;color:var(--label2);margin:4px 0 0}
+.hint b{color:var(--moon);font-weight:600}
+.trio{display:grid;grid-template-columns:repeat(3,1fr)}
+.trio div{padding:14px 12px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.trio div+div{border-left:.5px solid var(--sep)}
+.trio b{font-size:20px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.trio small{font-size:12px;color:var(--label2)}
+
+/* history */
+.hrow .d{width:52px;flex:none;display:flex;flex-direction:column}
+.hrow .d b{font-size:17px;font-weight:600;font-variant-numeric:tabular-nums}
+.hrow .d small{font-size:12px;color:var(--label2)}
+.tl{position:relative;height:8px;border-radius:4px;background:var(--fill)}
+.tl i{position:absolute;top:0;bottom:0;border-radius:4px;background:var(--accent)}
+.tlx{display:flex;justify-content:space-between;font-size:10px;color:var(--label3);margin-top:3px;font-variant-numeric:tabular-nums}
+.hrow .r{width:88px;flex:none;text-align:right;display:flex;flex-direction:column}
+.hrow .r b{font-size:16px;font-weight:600;font-variant-numeric:tabular-nums}
+.hrow .r small{font-size:12px;white-space:nowrap;color:var(--label2);font-variant-numeric:tabular-nums}
+.empty{text-align:center;color:var(--label2);padding:40px 16px;font-size:15px;line-height:1.6}
+.empty .m{font-size:44px;display:block;margin-bottom:8px}
+
+/* trends */
+.seg{display:flex;background:var(--fill);border-radius:9px;padding:2px;gap:2px}
+.seg button{flex:1;padding:6px 0;border-radius:7px;font-size:14px;font-weight:500}
+.seg button.on{background:#45343f;box-shadow:0 3px 8px rgba(0,0,0,.25)}
+.chart{padding:14px 12px 10px}
+.chart h4{margin:0 4px;font-size:15px;font-weight:600}
+.readout{margin:2px 4px 8px;font-size:13px;color:var(--label2);min-height:18px;font-variant-numeric:tabular-nums}
+.readout b{color:var(--label);font-weight:600}
+.chart svg{display:block;width:100%;touch-action:pan-y}
+.chart text{fill:var(--label3);font-size:10px;font-family:var(--ui);font-variant-numeric:tabular-nums}
+.grid2{display:grid;grid-template-columns:1fr 1fr}
+.grid2 div{padding:13px 16px;display:flex;flex-direction:column;gap:2px;position:relative}
+.grid2 div:nth-child(even){border-left:.5px solid var(--sep)}
+.grid2 div:nth-child(n+3){border-top:.5px solid var(--sep)}
+.grid2 b{font-size:20px;font-weight:600;font-variant-numeric:tabular-nums}
+.grid2 small{font-size:12px;color:var(--label2)}
+.tagrow .grow small{display:block;color:var(--label2);font-size:13px;font-variant-numeric:tabular-nums}
+.up{color:var(--accent)} .down{color:var(--moon)}
+
+/* settings */
+.stepper{display:flex;align-items:center;background:var(--fill);border-radius:9px;overflow:hidden;flex:none}
+.stepper button{width:44px;height:32px;font-size:20px;color:var(--label)}
+.stepper button:active{background:var(--fill2)}
+.stepper button+button{border-left:.5px solid var(--sep)}
+input[type=time],input[type=datetime-local]{font:inherit;font-size:16px;color:var(--label);background:var(--fill);border:0;border-radius:8px;padding:6px 10px;min-height:34px;font-variant-numeric:tabular-nums;color-scheme:dark}
+input[type=datetime-local]{min-width:0;max-width:62vw}
+
+/* sheet */
+.scrim{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.45);opacity:0;pointer-events:none;transition:opacity .25s}
+.scrim.on{opacity:1;pointer-events:auto}
+#sheet{position:fixed;left:0;right:0;bottom:0;z-index:61;margin:0 auto;max-width:600px;background:var(--bg);border-radius:14px 14px 0 0;max-height:90vh;overflow-y:auto;transform:translateY(105%);transition:transform .32s cubic-bezier(.2,.8,.2,1);padding:0 16px calc(env(safe-area-inset-bottom) + 20px)}
+#sheet.on{transform:none}
+.sheet-head{position:sticky;top:0;z-index:1;background:var(--bg);display:flex;align-items:center;justify-content:space-between;padding:14px 0 10px}
+.sheet-head h3{margin:0;font-size:17px;font-weight:600;flex:1;text-align:center}
+.sheet-head button{color:var(--accent);font-size:17px;min-width:64px;text-align:left}
+.sheet-head button.r{text-align:right;font-weight:600}
+.big-dur{text-align:center;padding:12px 0 4px}
+.big-dur b{font-size:48px;font-weight:200;font-variant-numeric:tabular-nums}
+.big-dur small{display:block;font-size:13px;color:var(--label2)}
+.quality{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding:12px}
+.quality button{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 0;border-radius:10px;font-size:12px;color:var(--label2)}
+.quality button span{font-size:26px;line-height:1;filter:grayscale(1) opacity(.55)}
+.quality button.on{background:var(--fill2);color:var(--label)}
+.quality button.on span{filter:none}
+.chips{display:flex;flex-wrap:wrap;gap:8px;padding:12px}
+.chip{background:var(--fill);border-radius:18px;padding:7px 14px;font-size:14px}
+.chip.on{background:var(--accent);color:#17121a;font-weight:500}
+textarea{display:block;width:100%;font:inherit;font-size:16px;color:var(--label);background:transparent;border:0;resize:none;padding:12px 16px;min-height:76px;-webkit-user-select:text;user-select:text}
+textarea::placeholder{color:var(--label3)}
+.err{color:var(--danger);font-size:13px;text-align:center;min-height:18px;margin-top:8px}
+#toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 92px);transform:translate(-50%,20px);z-index:80;background:color-mix(in srgb,var(--label) 90%,transparent);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:15px;display:flex;gap:14px;align-items:center;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;white-space:nowrap}
+#toast.on{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+#toast button{color:#c2456a;font-weight:600}
+
+/* wallpaper, like a phone's: one picture behind the whole app, blurred as much as you like; cards turn to glass */
+#wp{position:fixed;inset:0;z-index:0;overflow:hidden;background:var(--bg);pointer-events:none}
+#wp i{position:absolute;inset:calc(var(--wpblur,0px) * -2);background:center/cover no-repeat;filter:blur(var(--wpblur,0px))}
+#wp::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(23,18,26,.46),rgba(23,18,26,.26) 28%,rgba(23,18,26,.5) 62%,rgba(23,18,26,.72));transition:opacity .5s}
+body:not(.wp) #wp::after{opacity:0}
+/* asleep: the picture sinks into night, with a few stars */
+#wp b{position:absolute;inset:0;opacity:0;transition:opacity .8s;background:
+  radial-gradient(circle at 18% 12%,rgba(255,255,255,.9) 0 1px,transparent 1.6px),radial-gradient(circle at 82% 8%,#fff 0 1.2px,transparent 1.8px),
+  radial-gradient(circle at 64% 19%,rgba(255,255,255,.7) 0 .8px,transparent 1.4px),radial-gradient(circle at 92% 27%,rgba(255,255,255,.8) 0 1px,transparent 1.6px),
+  radial-gradient(circle at 36% 24%,rgba(255,255,255,.6) 0 .8px,transparent 1.4px),radial-gradient(circle at 8% 33%,rgba(255,255,255,.7) 0 .9px,transparent 1.5px),
+  linear-gradient(180deg,rgba(12,8,26,.8),rgba(26,14,34,.66))}
+body.asleep #wp b{opacity:1}
+main{position:relative;z-index:1}
+body.wp .card,body.wp .secondary,body.wp .seg{background:rgba(35,27,38,.62);-webkit-backdrop-filter:blur(24px) saturate(160%);backdrop-filter:blur(24px) saturate(160%)}
+body.wp .lt,body.wp .sub,body.wp .gt,body.wp .gf,body.wp .hero,body.wp main>.view>.hint{text-shadow:0 1px 10px rgba(12,6,16,.6)}
+body.wp .sub,body.wp .gt,body.wp .gf,body.wp main>.view>.hint{color:rgba(255,244,248,.84)}
+.wpctl{display:flex;gap:16px;align-items:center;padding:16px}
+.wpprev{width:92px;aspect-ratio:9/17;border-radius:14px;overflow:hidden;position:relative;flex:none;background:var(--bg);box-shadow:0 0 0 1px var(--sep)}
+.wpprev i{position:absolute;inset:-12px;background:center/cover no-repeat}
+.wpctl .grow{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}
+.wpctl label{display:flex;justify-content:space-between;font-size:15px}
+.wpctl label b{font-family:var(--round);font-weight:700;font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--accent);height:28px;margin:0}
+.wpctl small{font-size:12px;color:var(--label2);line-height:1.4}
+.bgpick{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px}
+.wpt{position:relative}
+.bgt{position:relative;width:100%;aspect-ratio:9/15;border-radius:12px;overflow:hidden;background:var(--card) center/cover no-repeat;display:flex;align-items:flex-end;box-shadow:inset 0 0 0 1px var(--sep)}
+.bgt span{width:100%;padding:14px 6px 5px;font-size:11px;color:#fff;text-align:left;background:linear-gradient(transparent,rgba(0,0,0,.6))}
+.bgt.on{box-shadow:inset 0 0 0 3px var(--accent)}
+.bgt.add{align-items:center;justify-content:center;flex-direction:column;gap:2px;color:var(--accent);font-size:13px;font-weight:600;background:var(--fill)}
+.bgt.add b{font-size:28px;font-weight:300;line-height:1}
+.wpx{position:absolute;right:4px;top:4px;width:24px;height:24px;border-radius:50%;background:rgba(18,12,22,.7);color:#fff;font-size:15px;line-height:1;display:grid;place-items:center}
+
+/* numbers: rounded and bold, the way iOS sets them (SF Rounded on Apple devices) */
+.trio b,.grid2 b,.hrow .d b,.hrow .r b,.big-dur b,.headline b,.hb b,.readout b,.row .val,.hrow .r small,.tlx,.chart text,.stepval{font-family:var(--round)}
+.trio b,.grid2 b,.hrow .d b,.hrow .r b,.big-dur b,.headline b,.hb b{font-weight:700}
+.chart text{font-weight:600}
+
+/* fuller statistics */
+.headline{padding:16px 16px 12px;display:flex;flex-direction:column;gap:2px}
+.headline small{font-size:13px;color:var(--label2)}
+.headline b{font-size:44px;line-height:1.1;font-variant-numeric:tabular-nums}
+.headline span{font-size:14px;color:var(--label2)}
+.headline span em{font-style:normal;font-weight:600;color:var(--moon)}
+.headline+.trio{border-top:.5px solid var(--sep)}
+.grid2 small em{font-style:normal;color:var(--label3)}
+.hb{display:grid;grid-template-columns:84px 1fr 34px;align-items:center;gap:10px;padding:8px 16px;font-size:14px}
+.hb .bar{height:8px;border-radius:4px;background:var(--fill);overflow:hidden}
+.hb .bar i{display:block;height:100%;border-radius:4px;background:var(--accent)}
+.hb.q .bar i{background:var(--mauve)}
+.hb b{text-align:right;font-variant-numeric:tabular-nums}
+.hbs{padding:8px 0}
+.gt span{float:right;font-variant-numeric:tabular-nums}
+
+/* tab bar */
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:10;display:flex;justify-content:center;background:color-mix(in srgb,var(--bg) 78%,transparent);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-top:.5px solid var(--sep);padding-bottom:env(safe-area-inset-bottom)}
+.tabbar .in{display:flex;width:100%;max-width:600px}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 0 6px;font-size:10px;font-weight:500;color:var(--label2)}
+.tab svg{width:26px;height:26px}
+.tab.on{color:var(--accent)}
+</style>
+</head>
+<body>
+<div id="wp" aria-hidden="true"><i></i><b></b></div>
+<main>
+  <section class="view on" id="v-home"></section>
+  <section class="view" id="v-log"></section>
+  <section class="view" id="v-trend"></section>
+  <section class="view" id="v-set"></section>
+</main>
+
+<nav class="tabbar"><div class="in">
+  <button class="tab on" data-tab="home"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 14.6A8.5 8.5 0 0 1 9.4 3.5a8.5 8.5 0 1 0 11.1 11.1z"/></svg>睡眠</button>
+  <button class="tab" data-tab="log"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4" cy="6" r=".6" fill="currentColor"/><circle cx="4" cy="12" r=".6" fill="currentColor"/><circle cx="4" cy="18" r=".6" fill="currentColor"/></svg>记录</button>
+  <button class="tab" data-tab="trend"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="11" width="4" height="9" rx="1.5"/><rect x="10" y="5" width="4" height="15" rx="1.5"/><rect x="17" y="8" width="4" height="12" rx="1.5"/></svg>趋势</button>
+  <button class="tab" data-tab="set"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2.2"/><circle cx="8" cy="17" r="2.2"/></svg>设置</button>
+</div></nav>
+
+<div class="scrim" id="scrim"></div>
+<div id="sheet" role="dialog" aria-modal="true"></div>
+<div id="toast" role="status"></div>
+<input type="file" id="file" accept="application/json,.json" hidden>
+<input type="file" id="wpfile" accept="image/*" multiple hidden>
+
+<script>
+'use strict';
+const LS = 'sleep.v1';
+const MIN = 60000;
+const WD = '日一二三四五六';
+const PHASE = ['🌑','🌘','🌗','🌖','🌕'];
+const QNAME = ['很差','较差','一般','不错','很好'];
+const TAGS = ['咖啡/茶','运动','饮酒','睡前刷手机','午睡','夜醒','做梦','压力大','加班','生病'];
+
+/* ---------- storage ---------- */
+function lsGet(k){ try{ return JSON.parse(localStorage.getItem(k)); }catch(e){ return null; } }
+function lsSet(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); return true; }catch(e){ return false; } }
+function load(){
+  const d = lsGet(LS);
+  const s = Object.assign({ v:1, goal:480, bed:'23:00', wake:'07:00', recs:[], active:null }, d && typeof d==='object' ? d : {});
+  s.recs = Array.isArray(s.recs) ? s.recs.filter(validRec) : [];
+  return s;
+}
+function validRec(r){ return r && typeof r.start==='number' && typeof r.end==='number' && r.end>r.start; }
+let S = load(), warned = false;
+function save(){
+  S.recs.sort((a,b)=>b.end-a.end);
+  if(!lsSet(LS,S) && !warned){ warned = true; toast('这里存不了数据，关掉页面后记录会丢'); }
+}
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+
+/* ---------- time helpers ---------- */
+const $ = s => document.querySelector(s);
+const pad = n => String(n).padStart(2,'0');
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const hm = ms => { const d = new Date(ms); return pad(d.getHours())+':'+pad(d.getMinutes()); };
+const dkey = ms => { const d = new Date(ms); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); };
+const dlabel = ms => { const d = new Date(ms); return `${d.getMonth()+1}月${d.getDate()}日 周${WD[d.getDay()]}`; };
+const toInput = ms => dkey(ms)+'T'+hm(ms);
+function fromInput(s){ const m = /^(\d+)-(\d+)-(\d+)T(\d+):(\d+)/.exec(s||''); return m ? new Date(+m[1], m[2]-1, +m[3], +m[4], +m[5]).getTime() : NaN; }
+const tmin = str => { const [h,m] = String(str).split(':').map(Number); return (h||0)*60 + (m||0); };
+const dayMin = ms => { const d = new Date(ms); return d.getHours()*60 + d.getMinutes(); };
+// minutes after a pivot time of day, so averages don't break at midnight (bedtimes pivot at noon, wake times at 18:00)
+const after = (ms, pivot) => (dayMin(ms) - pivot + 1440) % 1440;
+const clock = m => { m = Math.round(((m % 1440) + 1440) % 1440); return pad(Math.floor(m/60))+':'+pad(m%60); };
+const mins = r => (r.end - r.start) / MIN;
+function durTxt(m){ m = Math.round(m); const h = Math.floor(m/60), r = m%60; return h ? (r ? `${h}小时${r}分` : `${h}小时`) : `${r}分钟`; }
+function durHTML(m){ m = Math.round(m); const h = Math.floor(m/60), r = m%60; return h ? (r ? `${h}<i>小时</i>${r}<i>分</i>` : `${h}<i>小时</i>`) : `${r}<i>分钟</i>`; }
+function durShort(m){ m = Math.max(0, Math.round(m)); return Math.floor(m/60)+':'+pad(m%60); }
+const mean = a => a.length ? a.reduce((x,y)=>x+y,0) / a.length : NaN;
+const sd = a => { const m = mean(a); return Math.sqrt(mean(a.map(x => (x-m)*(x-m)))); };
+function startOfDay(ms, back=0){ const d = new Date(ms); return new Date(d.getFullYear(), d.getMonth(), d.getDate()-back).getTime(); }
+
+/* ---------- aggregation: a night belongs to the day you wake up ---------- */
+function nights(){
+  const m = new Map();
+  for(const r of S.recs){ const k = dkey(r.end); if(!m.has(k)) m.set(k, []); m.get(k).push(r); }
+  return m;
+}
+function daySummary(list){
+  if(!list || !list.length) return null;
+  const main = list.reduce((a,b) => mins(b) > mins(a) ? b : a);
+  return { total: list.reduce((s,r)=>s+mins(r),0), main, n: list.length };
+}
+function range(n, back=0){
+  const m = nights(), out = [], now = Date.now();
+  for(let i=n-1+back; i>=back; i--){ const day = startOfDay(now, i); const s = daySummary(m.get(dkey(day))); out.push({ day, s }); }
+  return out;
+}
+const BUCKETS = [[0,300,'不到 5 小时'],[300,360,'5–6 小时'],[360,420,'6–7 小时'],[420,480,'7–8 小时'],[480,540,'8–9 小时'],[540,1e9,'9 小时以上']];
+function stats(days){
+  const withS = days.filter(d => d.s), ds = withS.map(d => d.s);
+  const q = ds.map(s => s.main.q).filter(Boolean);
+  const bed = ds.map(s => after(s.main.start, 720)), wake = ds.map(s => after(s.main.end, 1080));
+  const bedT = (tmin(S.bed) + 720) % 1440;
+  const top = better => withS.length ? withS.reduce((a,b) => better(b.s.total, a.s.total) ? b : a) : null;
+  const lat = ds.map(s => s.main.lat).filter(v => v != null), wk = ds.map(s => s.main.wakes).filter(v => v != null);
+  const wd = Array.from({ length: 7 }, () => []);   // Monday first
+  withS.forEach(d => wd[(new Date(d.day).getDay() + 6) % 7].push(d.s.total));
+  return {
+    n: ds.length, N: days.length,
+    avg: mean(ds.map(s => s.total)),
+    total: ds.reduce((a,s) => a + s.total, 0),
+    hit: ds.filter(s => s.total >= S.goal).length,
+    bed: ds.length ? clock(mean(bed) + 720) : '—',
+    wake: ds.length ? clock(mean(wake) + 1080) : '—',
+    bedMin: ds.length ? clock(Math.min(...bed) + 720) : '—', bedMax: ds.length ? clock(Math.max(...bed) + 720) : '—',
+    wakeMin: ds.length ? clock(Math.min(...wake) + 1080) : '—', wakeMax: ds.length ? clock(Math.max(...wake) + 1080) : '—',
+    spread: ds.length > 1 ? Math.round(sd(bed)) : NaN,
+    onTime: bed.filter(b => Math.abs(b - bedT) <= 30).length,
+    q: mean(q), qn: [1,2,3,4,5].map(k => q.filter(x => x === k).length),
+    debt: ds.reduce((a,s) => a + Math.max(0, S.goal - s.total), 0),
+    longest: top((x,y) => x > y), shortest: top((x,y) => x < y),
+    lat: mean(lat), wakes: mean(wk),
+    wd: wd.map(mean), work: mean(wd.slice(0,5).flat()), weekend: mean(wd.slice(5).flat()),
+    dist: BUCKETS.map(([a,b,t]) => ({ t, n: ds.filter(s => s.total >= a && s.total < b).length })),
+  };
+}
+// whole-day number, safe across daylight-saving changes
+const dayNum = ms => { const d = new Date(ms); return Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 864e5; };
+function streaks(){
+  const list = [...nights().values()].map(l => ({ n: dayNum(l[0].end), ok: daySummary(l).total >= S.goal })).sort((a,b) => a.n - b.n);
+  let run = 0, runG = 0, best = 0, bestG = 0, prev = null;
+  for(const x of list){
+    const next = prev != null && x.n === prev + 1;
+    run = next ? run + 1 : 1;
+    runG = x.ok ? (next ? runG + 1 : 1) : 0;
+    best = Math.max(best, run); bestG = Math.max(bestG, runG); prev = x.n;
+  }
+  const live = prev != null && prev >= dayNum(Date.now()) - 1;   // still going if last night is in
+  return { cur: live ? run : 0, curG: live ? runG : 0, best, bestG };
+}
+// chart columns: one per day, or one per month for the year view
+function dayCols(days){
+  const n = days.length, step = n <= 7 ? 1 : n <= 30 ? 7 : 30;
+  return days.map((d, i) => {
+    const dt = new Date(d.day);
+    const c = { title: dlabel(d.day), tick: (n-1-i) % step === 0 ? (n <= 7 ? WD[dt.getDay()] : (dt.getMonth()+1)+'/'+dt.getDate()) : '', v: null };
+    if(d.s){ c.v = d.s.total; c.s = after(d.s.main.start, 720); c.e = c.s + mins(d.s.main); if(d.s.n > 1) c.note = d.s.n + ' 段'; }
+    return c;
+  });
+}
+function yearStart(){ const d = new Date(); return new Date(d.getFullYear(), d.getMonth() - 11, 1).getTime(); }
+function monthCols(){
+  const m = nights(), now = new Date(), cols = [];
+  for(let i=11; i>=0; i--){
+    const d0 = new Date(now.getFullYear(), now.getMonth() - i, 1), key = d0.getFullYear()+'-'+pad(d0.getMonth()+1)+'-';
+    const ds = [...m.entries()].filter(([k]) => k.startsWith(key)).map(([,l]) => daySummary(l));
+    const c = { title: `${d0.getFullYear()}年${d0.getMonth()+1}月`, tick: (d0.getMonth()+1)+'月', v: null };
+    if(ds.length){ c.v = mean(ds.map(s => s.total)); c.s = mean(ds.map(s => after(s.main.start, 720))); c.e = c.s + mean(ds.map(s => mins(s.main))); c.note = ds.length + ' 晚平均'; }
+    cols.push(c);
+  }
+  return cols;
+}
+
+/* ---------- dial ---------- */
+const P = (cx,cy,r,deg) => { const a = (deg-90) * Math.PI/180; return [cx + r*Math.cos(a), cy + r*Math.sin(a)]; };
+function arc(cx,cy,r,a0,a1){
+  let span = a1 - a0; while(span < 0) span += 360;
+  if(span >= 359.5) return `M${cx} ${cy-r}A${r} ${r} 0 1 1 ${cx-.01} ${cy-r}`;
+  const [x0,y0] = P(cx,cy,r,a0), [x1,y1] = P(cx,cy,r,a0+span);
+  return `M${x0.toFixed(2)} ${y0.toFixed(2)}A${r} ${r} 0 ${span>180?1:0} 1 ${x1.toFixed(2)} ${y1.toFixed(2)}`;
+}
+const deg = m => m / 1440 * 360;
+function dial(start, end, live){
+  const c = 120, r = 96;
+  let ticks = '';
+  for(let h=0; h<24; h++){
+    const big = h % 6 === 0, [x0,y0] = P(c,c,r-17,h*15), [x1,y1] = P(c,c,r-(big?25:21),h*15);
+    ticks += `<line x1="${x0.toFixed(1)}" y1="${y0.toFixed(1)}" x2="${x1.toFixed(1)}" y2="${y1.toFixed(1)}" stroke="var(--label3)" stroke-width="${big?1.6:1}" stroke-linecap="round"/>`;
+  }
+  const lbl = [[0,'0'],[6,'6'],[12,'12'],[18,'18']].map(([h,t]) => { const [x,y] = P(c,c,r-40,h*15); return `<text x="${x.toFixed(1)}" y="${(y+6).toFixed(1)}" text-anchor="middle" fill="var(--label2)" font-size="17">${t}</text>`; }).join('');
+  const goal = `<path d="${arc(c,c,r,deg(tmin(S.bed)),deg(tmin(S.wake)))}" fill="none" stroke="var(--fill2)" stroke-width="14" stroke-linecap="round"/>`;
+  let main = '', dots = '';
+  if(start != null){
+    main = `<path d="${arc(c,c,r,deg(dayMin(start)),deg(dayMin(end)))}" fill="none" stroke="${live?'var(--moon)':'var(--accent)'}" stroke-width="14" stroke-linecap="round"/>`;
+    const [x,y] = P(c,c,r,deg(dayMin(end)));
+    if(live) dots = `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4" fill="var(--bg)"/>`;
+  }
+  return `<svg viewBox="0 0 240 240" aria-hidden="true"><circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="var(--fill)" stroke-width="14"/>${goal}${main}${dots}${ticks}${lbl}</svg>`;
+}
+
+/* ---------- wallpaper, like a phone's ----------
+   One picture behind the whole app. Start with the classroom sunset and two gradients, add your own from the
+   photo library (kept in IndexedDB on this device), switch from Settings or the button on the home screen,
+   and set how much it is blurred with a slider. */
+const WPB = [
+  { id: 'b:classroom', name: '教室晚霞', css: 'url("bg-classroom.jpg")', pos: '80% center' },
+  { id: 'g:sunset', name: '晚霞', css: 'linear-gradient(180deg,#8d6fb0 0%,#c693bf 22%,#e28190 48%,#f0a49c 66%,#f8c9aa 82%,#f9ecb3 100%)' },
+  { id: 'g:night', name: '夜空', css: 'linear-gradient(180deg,#120e20 0%,#211936 40%,#3e2c55 76%,#6a4566 100%)' },
+];
+let WP = Object.assign({ cur: 'b:classroom', blur: 0 }, lsGet('sleep.wp') || {});
+let myWp = [];   // {id, url}
+const saveWp = () => lsSet('sleep.wp', WP);
+const wpList = () => WPB.concat(myWp.map(p => ({ id: p.id, name: '', css: `url("${p.url}")`, pos: 'center', mine: true })));
+const curWp = () => WP.cur === 'none' ? null : (wpList().find(w => w.id === WP.cur) || WPB[0]);
+function paintWp(){
+  const w = curWp(), el = $('#wp i');
+  el.style.backgroundImage = w ? w.css : 'none';
+  el.style.backgroundPosition = w ? (w.pos || 'center') : '';
+  document.documentElement.style.setProperty('--wpblur', (w ? WP.blur : 0) + 'px');
+  document.body.classList.toggle('wp', !!w);
+  document.body.classList.toggle('asleep', !!S.active);
+}
+function wpdb(){ return new Promise((res, rej) => { const r = indexedDB.open('sleep', 1); r.onupgradeneeded = () => r.result.createObjectStore('wp', { keyPath: 'id' }); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); }
+const idbDone = q => new Promise((res, rej) => { q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); });
+async function loadWp(){
+  try{
+    const d = await wpdb();
+    const all = await idbDone(d.transaction('wp').objectStore('wp').getAll());
+    myWp.forEach(p => URL.revokeObjectURL(p.url));
+    myWp = all.sort((a,b) => a.added - b.added).map(p => ({ id: p.id, url: URL.createObjectURL(p.blob) }));
+  }catch(e){ myWp = []; }
+}
+async function shrink(file){
+  const url = URL.createObjectURL(file);
+  try{
+    const img = new Image(); img.src = url; await img.decode();
+    const s = Math.min(1, 2200 / Math.max(img.naturalWidth, img.naturalHeight));
+    const c = document.createElement('canvas'); c.width = Math.round(img.naturalWidth * s); c.height = Math.round(img.naturalHeight * s);
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    return await new Promise(r => c.toBlob(r, 'image/jpeg', .88));
+  } finally { URL.revokeObjectURL(url); }
+}
+async function addWp(files){
+  let ok = 0, last = null;
+  try{
+    const d = await wpdb();
+    for(const f of files){
+      try{
+        const blob = await shrink(f); if(!blob) continue;
+        const rec = { id: 'u:' + uid(), blob, added: Date.now() + ok };
+        await idbDone(d.transaction('wp', 'readwrite').objectStore('wp').put(rec));
+        ok++; last = rec.id;
+      }catch(e){}
+    }
+  }catch(e){}
+  if(!ok) return toast('这张图片导入不了');
+  await loadWp(); WP.cur = last; saveWp(); paintWp(); render();
+  toast(ok > 1 ? `已导入 ${ok} 张壁纸` : '已设为壁纸');
+}
+async function delWp(id){
+  try{ const d = await wpdb(); await idbDone(d.transaction('wp', 'readwrite').objectStore('wp').delete(id)); }catch(e){}
+  await loadWp(); if(WP.cur === id){ WP.cur = WPB[0].id; saveWp(); }
+  paintWp(); render();
+}
+function stepWp(){ const L = wpList(), i = L.findIndex(w => w.id === WP.cur); WP.cur = L[(i + 1) % L.length].id; saveWp(); paintWp(); }
+const SWAP_ICON = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4" width="15" height="12" rx="2.5"/><path d="M2.5 13l4-4 3.5 3.5 2.5-2.5 5 5"/><circle cx="13.5" cy="7.5" r="1.3"/></svg>';
+
+/* ---------- views ---------- */
+let tab = 'home', trendN = 7, sel = -1;
+
+const fact = (l, v) => `<div><small>${l}</small><b>${v}</b></div>`;
+function renderHome(){
+  const now = Date.now(), el = $('#v-home');
+  const d = new Date(now);
+  const swap = `<button class="wpnext" data-act="wpnext" aria-label="换一张壁纸">${SWAP_ICON}</button>`;
+  let h = `<h1 class="lt">睡眠</h1><p class="sub">${d.getMonth()+1}月${d.getDate()}日 周${WD[d.getDay()]} · 目标 ${durTxt(S.goal)}</p>`;
+  if(S.active){
+    const m = (now - S.active.start) / MIN;
+    h += `<div class="hero">${swap}<small>已经睡了</small><b>${durShort(m)}</b><span>${hm(S.active.start)} 入睡</span></div>
+      <div class="card sum">${dial(S.active.start, now, true)}<div class="facts">${fact('入睡', hm(S.active.start))}${fact('目标起床', S.wake)}${fact('目标时长', durHTML(S.goal))}${m < S.goal ? fact('还差', durHTML(S.goal - m)) : fact('状态', '睡够了')}</div></div>
+      <div class="btns"><button class="primary" data-act="wake">起床了</button><button class="secondary" data-act="cancel">取消这次</button></div>`;
+  } else {
+    const last = S.recs[0];
+    if(last){
+      const m = mins(last), diff = Math.round(m - S.goal);
+      const when = dkey(last.end) === dkey(now) ? '昨晚' : dlabel(last.end);
+      h += `<div class="hero">${swap}<small>${when}</small><b>${durShort(m)}</b><span>${hm(last.start)} → ${hm(last.end)}</span></div>
+        <div class="card sum">${dial(last.start, last.end)}<div class="facts">${fact('入睡', hm(last.start))}${fact('起床', hm(last.end))}${fact('质量', last.q ? PHASE[last.q-1] + ' <i>' + QNAME[last.q-1] + '</i>' : '—')}${fact(diff >= 0 ? '比目标多' : '比目标少', diff ? durHTML(Math.abs(diff)) : '刚好')}</div></div>`;
+    } else {
+      h += `<div class="hero">${swap}<small>还没有记录</small><b>—:—</b><span>睡前点“开始睡觉”，醒来点“起床了”</span></div>
+        <div class="card sum">${dial(null)}<div class="facts">${fact('目标入睡', S.bed)}${fact('目标起床', S.wake)}${fact('目标时长', durHTML(S.goal))}</div></div>`;
+    }
+    const left = (tmin(S.bed) - dayMin(now) + 1440) % 1440;
+    const hint = left <= 180 ? `离目标入睡还有 <b>${durTxt(left)}</b>` : left >= 1440 - 240 ? `已过目标入睡时间 <b>${durTxt(1440 - left)}</b>` : '';
+    h += `<div class="btns"><button class="primary" data-act="sleep">开始睡觉</button><button class="secondary" data-act="add">补记一晚</button></div>${hint ? `<p class="hint" style="margin-top:12px">${hint}</p>` : ''}`;
+  }
+  const st = stats(range(7)), prev = stats(range(7, 7)), sk = streaks();
+  const dv = st.n && prev.n ? Math.round(st.avg - prev.avg) : null;
+  h += `<p class="gt">最近 7 天</p><div class="card trio">
+    <div><b>${st.n ? durShort(st.avg) : '—'}</b><small>平均时长</small></div>
+    <div><b>${st.bed}</b><small>平均入睡</small></div>
+    <div><b>${st.n ? st.hit + '/' + st.n : '—'}</b><small>睡够的天数</small></div></div>
+    ${st.n ? `<p class="gf">${dv == null ? '' : dv ? `比再往前 7 天平均${dv > 0 ? '多' : '少'}睡 ${durTxt(Math.abs(dv))}。` : '和再往前 7 天持平。'}这 ${st.n} 天累计睡眠债 ${st.debt ? durTxt(st.debt) : '为零'}${sk.cur > 1 ? `，已连续记录 ${sk.cur} 天` : ''}。</p>` : ''}`;
+  el.innerHTML = h;
+}
+
+function tlBar(r){
+  // a strip from 20:00 to 12:00 the next day
+  const lo = 480, span = 960;
+  const s = after(r.start, 720), e = s + mins(r);
+  const a = Math.max(0, Math.min(1, (s-lo)/span)), b = Math.max(0, Math.min(1, (e-lo)/span));
+  return `<div class="tl"><i style="left:${(a*100).toFixed(1)}%;width:${Math.max(1.5,(b-a)*100).toFixed(1)}%"></i></div>`;
+}
+function renderLog(){
+  const el = $('#v-log');
+  let h = `<h1 class="lt">记录</h1><p class="sub">${S.recs.length ? `共 ${S.recs.length} 条，点一条可以修改` : '每一次睡眠都在这里'}</p>`;
+  if(!S.recs.length){ el.innerHTML = h + `<div class="card empty"><span class="m">🌙</span>还没有睡眠记录<br>在“睡眠”页点“开始睡觉”，或者补记一晚</div><div class="btns"><button class="secondary" data-act="add">补记一晚</button></div>`; return; }
+  let month = '';
+  const per = {};
+  for(const [k, l] of nights()) (per[k.slice(0,7)] = per[k.slice(0,7)] || []).push(daySummary(l).total);
+  h += `<div class="btns" style="margin-top:0"><button class="secondary" data-act="add">补记一晚</button></div>`;
+  for(const r of S.recs){
+    const d = new Date(r.end), mk = d.getFullYear()+'年'+(d.getMonth()+1)+'月';
+    if(mk !== month){
+      if(month) h += `</div>`;
+      month = mk;
+      const pm = per[d.getFullYear()+'-'+pad(d.getMonth()+1)] || [];
+      h += `<p class="gt">${mk} <span>${pm.length} 晚 · 平均 ${durShort(mean(pm))}</span></p><div class="card"><div class="row" style="min-height:0;padding:8px 16px 2px"><div style="width:52px"></div><div class="grow tlx"><span>20:00</span><span>0:00</span><span>4:00</span><span>8:00</span><span>12:00</span></div><div style="width:88px"></div></div>`;
+    }
+    h += `<button class="row tap hrow" data-edit="${esc(r.id)}"><div class="d"><b>${d.getDate()}日</b><small>周${WD[d.getDay()]}</small></div>
+      <div class="grow">${tlBar(r)}</div>
+      <div class="r"><b>${durShort(mins(r))} ${r.q ? PHASE[r.q-1] : ''}</b><small>${hm(r.start)}–${hm(r.end)}</small></div></button>`;
+  }
+  el.innerHTML = h + `</div>`;
+}
+
+/* charts: single series, thin rounded marks, recessive grid, tap/hover a column to read it */
+function topRounded(x, y, w, h, r){
+  r = Math.min(r, w/2, h);
+  return `M${x} ${y+h}V${y+r}Q${x} ${y} ${x+r} ${y}H${x+w-r}Q${x+w} ${y} ${x+w} ${y+r}V${y+h}Z`;
+}
+const HALO = 'paint-order:stroke;stroke:var(--card);stroke-width:4px;stroke-linejoin:round';
+function xLabels(cols, cw, padL, H){
+  return cols.map((c, i) => c.tick ? `<text x="${(padL + cw*(i+.5)).toFixed(1)}" y="${H-6}" text-anchor="middle">${c.tick}</text>` : '').join('');
+}
+function durChart(cols, W){
+  const H = 170, padL = 30, padR = 8, padT = 8, padB = 22;
+  const goalH = S.goal / 60;
+  const maxH = Math.max(10, Math.ceil(Math.max(goalH, ...cols.map(c => c.v ? c.v/60 : 0))));
+  const cw = (W - padL - padR) / cols.length, bw = Math.max(2, Math.min(18, cw*.62));
+  const y = v => padT + (H - padT - padB) * (1 - v/maxH);
+  let g = '';
+  for(let v = 0; v <= maxH; v += 2){ g += `<line x1="${padL}" x2="${W-padR}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}" stroke="var(--sep)" stroke-width="${v?.5:1}"/><text x="${padL-6}" y="${(y(v)+3.5).toFixed(1)}" text-anchor="end">${v}h</text>`; }
+  let b = '';
+  cols.forEach((c, i) => {
+    if(c.v == null) return;
+    const v = c.v/60, x = +(padL + cw*(i+.5) - bw/2).toFixed(1);
+    b += `<path d="${topRounded(x, y(v), bw, y(0)-y(v), 4)}" fill="var(--accent)" opacity="${sel < 0 || sel === i ? 1 : .35}"/>`;
+  });
+  const gy = y(goalH).toFixed(1);
+  g += `<line x1="${padL}" x2="${W-padR}" y1="${gy}" y2="${gy}" stroke="var(--moon)" stroke-width="1.2" stroke-dasharray="4 4"/>`;
+  const gl = `<text x="${W-padR}" y="${gy-4}" text-anchor="end" style="fill:var(--moon);${HALO}">目标 ${durShort(S.goal)}</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" height="${H}" data-chart data-padl="${padL}" data-cw="${cw}" data-n="${cols.length}">${g}${b}${gl}${xLabels(cols, cw, padL, H)}</svg>`;
+}
+function timeChart(cols, W){
+  const H = 190, padL = 38, padR = 8, padT = 8, padB = 22;
+  const bedT = (tmin(S.bed) + 720) % 1440;   // minutes after noon
+  let wakeT = (tmin(S.wake) + 720) % 1440; if(wakeT <= bedT) wakeT += 1440;
+  const spans = cols.filter(c => c.v != null);
+  const lo = Math.floor((Math.min(bedT, ...spans.map(c => c.s)) - 30) / 60) * 60;
+  const hi = Math.ceil((Math.max(wakeT, ...spans.map(c => c.e)) + 30) / 60) * 60;
+  const y = m => padT + (H - padT - padB) * (m - lo) / (hi - lo);
+  const cw = (W - padL - padR) / cols.length, bw = Math.max(2, Math.min(14, cw*.5));
+  const stepH = (hi - lo) / 60 > 10 ? 3 : 2;
+  let g = '', t = '';
+  for(let m = lo; m <= hi; m += 60){
+    if(((m/60) % stepH) !== 0) continue;
+    g += `<line x1="${padL}" x2="${W-padR}" y1="${y(m).toFixed(1)}" y2="${y(m).toFixed(1)}" stroke="var(--sep)" stroke-width=".5"/><text x="${padL-6}" y="${(y(m)+3.5).toFixed(1)}" text-anchor="end">${clock(m+720)}</text>`;
+  }
+  for(const [m, name] of [[bedT, '目标入睡'], [wakeT, '目标起床']]){
+    g += `<line x1="${padL}" x2="${W-padR}" y1="${y(m).toFixed(1)}" y2="${y(m).toFixed(1)}" stroke="var(--moon)" stroke-width="1.2" stroke-dasharray="4 4"/>`;
+    t += `<text x="${W-padR}" y="${(y(m)-4).toFixed(1)}" text-anchor="end" style="fill:var(--moon);${HALO}">${name}</text>`;
+  }
+  let b = '';
+  cols.forEach((c, i) => {
+    if(c.v == null) return;
+    const x = padL + cw*(i+.5) - bw/2;
+    b += `<rect x="${x.toFixed(1)}" y="${y(c.s).toFixed(1)}" width="${bw}" height="${Math.max(2, y(c.e)-y(c.s)).toFixed(1)}" rx="${Math.min(4, bw/2)}" fill="var(--mauve)" opacity="${sel < 0 || sel === i ? 1 : .35}"/>`;
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" height="${H}" data-chart data-padl="${padL}" data-cw="${cw}" data-n="${cols.length}">${g}${b}${t}${xLabels(cols, cw, padL, H)}</svg>`;
+}
+// average by day of the week: seven bars, each with its value on top
+function weekChart(wd, W){
+  const H = 150, padL = 8, padR = 8, padT = 20, padB = 22;
+  const maxH = Math.max(10, Math.ceil(Math.max(S.goal, ...wd.filter(v => !isNaN(v))) / 60));
+  const cw = (W - padL - padR) / 7, bw = Math.min(26, cw*.5);
+  const y = v => padT + (H - padT - padB) * (1 - v/maxH);
+  const gy = y(S.goal/60).toFixed(1);
+  let s = `<line x1="${padL}" x2="${W-padR}" y1="${y(0)}" y2="${y(0)}" stroke="var(--sep)"/>`, t = '';
+  wd.forEach((v, i) => {
+    const cx = padL + cw*(i+.5);
+    s += `<text x="${cx.toFixed(1)}" y="${H-6}" text-anchor="middle">${'一二三四五六日'[i]}</text>`;
+    if(isNaN(v)) return;
+    s += `<path d="${topRounded(+(cx-bw/2).toFixed(1), y(v/60), bw, y(0)-y(v/60), 4)}" fill="${i > 4 ? 'var(--mauve)' : 'var(--accent)'}"/>`;
+    t += `<text x="${cx.toFixed(1)}" y="${(y(v/60)-5).toFixed(1)}" text-anchor="middle" style="fill:var(--label);${HALO}">${durShort(v)}</text>`;
+  });
+  s += `<line x1="${padL}" x2="${W-padR}" y1="${gy}" y2="${gy}" stroke="var(--moon)" stroke-width="1.2" stroke-dasharray="4 4"/>`;
+  return `<svg viewBox="0 0 ${W} ${H}" height="${H}">${s}${t}</svg>`;
+}
+const hbar = (label, n, max, cls='') => `<div class="hb ${cls}"><span>${label}</span><div class="bar"><i style="width:${max ? (n/max*100).toFixed(1) : 0}%"></i></div><b>${n}</b></div>`;
+function tagInsights(){
+  const recs = S.recs, out = [];
+  for(const t of TAGS){
+    const w = recs.filter(r => (r.tags || []).includes(t)), wo = recs.filter(r => !(r.tags || []).includes(t));
+    if(w.length < 2 || wo.length < 2) continue;
+    const dd = mean(w.map(mins)) - mean(wo.map(mins));
+    const qw = mean(w.map(r => r.q).filter(Boolean)), qo = mean(wo.map(r => r.q).filter(Boolean));
+    out.push({ t, n: w.length, dd, dq: qw - qo, qw });
+  }
+  return out.sort((a,b) => Math.abs(b.dd) - Math.abs(a.dd));
+}
+const RANGES = [[7,'7 天'],[30,'30 天'],[90,'90 天'],[365,'1 年']];
+function renderTrend(){
+  const el = $('#v-trend');
+  const year = trendN === 365;
+  const n = year ? dayNum(Date.now()) - dayNum(yearStart()) + 1 : trendN;
+  const days = range(n), st = stats(days), prev = stats(range(n, n)), sk = streaks(), all = stats(range(Math.max(1, S.recs.length ? dayNum(Date.now()) - dayNum(S.recs[S.recs.length-1].end) + 1 : 1)));
+  const cols = year ? monthCols() : dayCols(days);
+  const W = Math.max(280, Math.min(568, (el.clientWidth || document.querySelector('main').clientWidth - 32) - 24));
+  const pick = sel >= 0 && cols[sel] ? cols[sel] : null;
+  const none = c => `<b>${c.title}</b> · 没有记录`;
+  const ro1 = pick ? (pick.v != null ? `<b>${pick.title}</b> · ${durTxt(pick.v)}${pick.note ? `（${pick.note}）` : ''}` : none(pick)) : (st.n ? `平均 <b>${durTxt(st.avg)}</b> · 有 ${st.n} 天记录` : '这段时间还没有记录');
+  const ro2 = pick ? (pick.v != null ? `<b>${pick.title}</b> · ${clock(pick.s+720)} → ${clock(pick.e+720)}` : none(pick)) : (st.n ? `平均 <b>${st.bed}</b> 入睡 · <b>${st.wake}</b> 起床` : '　');
+  const span = year ? '12 个月' : trendN + ' 天';
+  const dv = st.n && prev.n ? Math.round(st.avg - prev.avg) : null;
+  const delta = dv == null ? (st.n ? `前 ${span}没有记录可以比较` : '记下第一晚后这里会有数据') : dv ? `比前 ${span}每晚<em>${dv > 0 ? '多' : '少'}睡 ${durTxt(Math.abs(dv))}</em>` : `和前 ${span}持平`;
+  const pct = (a, b) => b ? Math.round(a/b*100) + '%' : '—';
+  const one = d => d ? `<b>${durHTML(d.s.total)}</b>` : '<b>—</b>';
+  const on = d => d ? ` <em>${new Date(d.day).getMonth()+1}月${new Date(d.day).getDate()}日</em>` : '';
+  let h = `<h1 class="lt">趋势</h1><p class="sub">点柱子看那一${year ? '个月' : '天'}</p>
+    <div class="seg">${RANGES.map(([k,t]) => `<button class="${k===trendN?'on':''}" data-n="${k}">${t}</button>`).join('')}</div>
+    <div class="card" style="margin-top:16px"><div class="headline"><small>平均每晚</small><b>${st.n ? durHTML(st.avg) : '—'}</b><span>${delta}</span></div>
+      <div class="trio"><div><b>${st.n}<i>/${st.N} 天</i></b><small>有记录</small></div><div><b>${pct(st.hit, st.n)}</b><small>睡够目标</small></div><div><b>${isNaN(st.q) ? '—' : PHASE[Math.round(st.q)-1] + ' ' + st.q.toFixed(1)}</b><small>平均质量</small></div></div></div>
+    <p class="gt">${year ? '每月平均时长' : '每晚时长'}</p><div class="card chart"><p class="readout">${ro1}</p>${durChart(cols, W)}</div>
+    <p class="gt">入睡和起床</p><div class="card chart"><p class="readout">${ro2}</p>${timeChart(cols, W)}</div>
+    <p class="gt">作息时间</p><div class="card grid2">
+      <div><b>${st.bed}</b><small>平均入睡</small></div>
+      <div><b>${st.wake}</b><small>平均起床</small></div>
+      <div><b>${st.bedMin}<i> ~ </i>${st.bedMax}</b><small>最早 ~ 最晚入睡</small></div>
+      <div><b>${st.wakeMin}<i> ~ </i>${st.wakeMax}</b><small>最早 ~ 最晚起床</small></div>
+      <div><b>${isNaN(st.spread) ? '—' : '±' + st.spread + '<i>分</i>'}</b><small>入睡时间波动</small></div>
+      <div><b>${pct(st.onTime, st.n)}</b><small>准时入睡（目标前后 30 分）</small></div>
+    </div>
+    <p class="gf">入睡时间波动越小，作息越规律；一般在 ±30 分以内比较理想。</p>
+    <p class="gt">睡眠时长</p><div class="card grid2">
+      <div><b>${st.n ? durHTML(st.total) : '—'}</b><small>累计睡眠</small></div>
+      <div><b>${st.n ? (st.debt ? durHTML(st.debt) : '0') : '—'}</b><small>睡眠债（比目标少睡的总和）</small></div>
+      <div>${one(st.longest)}<small>最长一晚${on(st.longest)}</small></div>
+      <div>${one(st.shortest)}<small>最短一晚${on(st.shortest)}</small></div>
+      ${isNaN(st.lat) && isNaN(st.wakes) ? '' : `<div><b>${isNaN(st.lat) ? '—' : Math.round(st.lat) + '<i>分钟</i>'}</b><small>平均入睡用时</small></div><div><b>${isNaN(st.wakes) ? '—' : st.wakes.toFixed(1) + '<i>次</i>'}</b><small>平均夜醒</small></div>`}
+    </div>`;
+  if(st.n){
+    const dmax = Math.max(...st.dist.map(x => x.n)), qmax = Math.max(...st.qn);
+    h += `<p class="gt">星期几睡得多</p><div class="card chart">${weekChart(st.wd, W)}</div>
+      <p class="gf">工作日平均 ${isNaN(st.work) ? '—' : durTxt(st.work)}，周末平均 ${isNaN(st.weekend) ? '—' : durTxt(st.weekend)}${!isNaN(st.work) && !isNaN(st.weekend) && Math.abs(st.weekend - st.work) >= 1 ? `，周末${st.weekend > st.work ? '多' : '少'}睡 ${durTxt(Math.abs(st.weekend - st.work))}` : ''}。按起床那天算。</p>
+      <p class="gt">时长分布 <span>晚数</span></p><div class="card hbs">${st.dist.map(x => hbar(x.t, x.n, dmax)).join('')}</div>
+      ${qmax ? `<p class="gt">睡眠质量 <span>晚数</span></p><div class="card hbs">${st.qn.map((k, i) => hbar(PHASE[4-i] + ' ' + QNAME[4-i], st.qn[4-i], qmax, 'q')).join('')}</div>` : ''}`;
+  }
+  h += `<p class="gt">全部记录</p><div class="card grid2">
+      <div><b>${sk.cur}<i>天</i></b><small>连续记录 <em>最长 ${sk.best} 天</em></small></div>
+      <div><b>${sk.curG}<i>天</i></b><small>连续睡够 <em>最长 ${sk.bestG} 天</em></small></div>
+      <div><b>${all.n}<i>晚</i></b><small>记录过的夜晚</small></div>
+      <div><b>${Math.round(all.total/60)}<i>小时</i></b><small>一共睡了</small></div>
+    </div>`;
+  const tags = tagInsights();
+  if(tags.length){
+    h += `<p class="gt">标签和睡眠（全部记录）</p><div class="card">` + tags.map(x => `<div class="row tagrow"><div class="grow">${esc(x.t)}<small>${x.n} 晚 · 时长${x.dd >= 0 ? '多' : '少'} ${durTxt(Math.abs(x.dd))}${isNaN(x.dq) ? '' : ` · 质量 ${Math.abs(x.dq) < .05 ? '持平' : (x.dq > 0 ? '+' : '−') + Math.abs(x.dq).toFixed(1)}`}</small></div><span class="${x.dd >= 0 ? 'up' : 'down'}">${x.dd >= 0 ? '↑' : '↓'}</span></div>`).join('') + `</div><p class="gf">和没有这个标签的晚上相比。记录越多越准。</p>`;
+  }
+  el.innerHTML = h;
+}
+
+function wpPanel(){
+  const cur = curWp(), L = wpList();
+  const tile = w => `<div class="wpt"><button class="bgt${cur && w.id === cur.id ? ' on' : ''}" data-wpset="${esc(w.id)}" style="background-image:${esc(w.css)};background-position:${w.pos || 'center'}" aria-label="设为壁纸">${w.name ? `<span>${w.name}</span>` : ''}</button>${w.mine ? `<button class="wpx" data-wpdel="${esc(w.id)}" aria-label="删除这张壁纸">×</button>` : ''}</div>`;
+  return `<p class="gt">壁纸</p><div class="card wpctl">
+      <div class="wpprev"><i id="wp-prev" style="${cur ? `background-image:${esc(cur.css)};background-position:${cur.pos || 'center'};` : ''}filter:blur(${(WP.blur * .26).toFixed(1)}px)"></i></div>
+      <div class="grow"><label for="wp-blur">虚化<b id="wp-blur-v">${WP.blur}</b></label>
+        <input type="range" id="wp-blur" min="0" max="40" step="1" value="${WP.blur}" ${cur ? '' : 'disabled'}>
+        <small>往右拖越模糊，0 是原图。${cur ? '' : '现在是纯色，选一张壁纸后可以调。'}</small></div>
+    </div>
+    <div class="bgpick">${L.map(tile).join('')}
+      <div class="wpt"><button class="bgt${cur ? '' : ' on'}" data-wpset="none" aria-label="不用壁纸"><span>纯色</span></button></div>
+      <div class="wpt"><button class="bgt add" data-act="wpadd"><b>+</b>导入</button></div>
+    </div>
+    <p class="gf">点一张就换上；“导入”从相册选照片，可以一次选多张。首页右上角的按钮也能换下一张。导入的壁纸只存在这台设备上，不在备份文件里。</p>`;
+}
+function renderSet(){
+  $('#v-set').innerHTML = `<h1 class="lt">设置</h1><p class="sub">记录只存在这台设备上</p>
+    ${wpPanel()}
+    <p class="gt">目标</p><div class="card">
+      <div class="row"><div class="grow">每晚睡够</div><span class="val">${durTxt(S.goal)}</span><div class="stepper"><button data-goal="-30" aria-label="少半小时">−</button><button data-goal="30" aria-label="多半小时">+</button></div></div>
+      <label class="row"><div class="grow">目标入睡</div><input type="time" id="t-bed" value="${S.bed}"></label>
+      <label class="row"><div class="grow">目标起床</div><input type="time" id="t-wake" value="${S.wake}"></label>
+    </div>
+    <p class="gf">成年人一般建议每晚 7–9 小时。表盘上的浅色弧线就是目标时段。</p>
+    <p class="gt">数据</p><div class="card">
+      <button class="row tap" data-act="export"><div class="grow">导出备份</div><span class="val">${S.recs.length} 条</span><span class="chev">›</span></button>
+      <button class="row tap" data-act="import"><div class="grow">从备份恢复</div><span class="chev">›</span></button>
+      <button class="row tap" data-act="wipe"><div class="grow danger">清空所有记录</div></button>
+    </div>
+    <p class="gf">换手机或清理 Safari 数据之前，先导出一份备份。恢复时同一条记录会被覆盖，其他记录保留。</p>
+    <p class="gt">安装</p><div class="card pad" style="font-size:15px;color:var(--label2);line-height:1.6">在 iPhone 的 Safari 里打开本页，点分享按钮 → “添加到主屏幕”，之后断网也能用。</div>
+    <p class="gf">“教室晚霞”这张照片来自小红书 @September47_。</p>`;
+}
+
+function render(){
+  document.body.classList.toggle('asleep', !!S.active);
+  ({ home: renderHome, log: renderLog, trend: renderTrend, set: renderSet })[tab]();
+}
+
+/* ---------- sheet: add / edit / wake up ---------- */
+let draft = null;
+function openSheet(rec, fromActive){
+  draft = Object.assign({ id: null, start: 0, end: 0, q: 0, tags: [], note: '', lat: null, wakes: null }, JSON.parse(JSON.stringify(rec)));
+  draft.fromActive = !!fromActive;
+  const isNew = !rec.id;
+  $('#sheet').innerHTML = `<div class="sheet-head"><button data-act="close">取消</button><h3>${fromActive ? '早上好' : isNew ? '补记一晚' : '修改记录'}</h3><button class="r" data-act="save">保存</button></div>
+    <div class="big-dur"><b id="d-dur"></b><small id="d-day"></small></div>
+    <div class="card">
+      <label class="row"><div class="grow">入睡</div><input type="datetime-local" id="d-start" value="${toInput(draft.start)}"></label>
+      <label class="row"><div class="grow">起床</div><input type="datetime-local" id="d-end" value="${toInput(draft.end)}"></label>
+    </div>
+    <p class="gt">睡得怎么样</p><div class="card quality">${PHASE.map((p,i) => `<button data-q="${i+1}" class="${draft.q===i+1?'on':''}"><span>${p}</span>${QNAME[i]}</button>`).join('')}</div>
+    <p class="gt">细节（可以不填）</p><div class="card">
+      <div class="row"><div class="grow">躺下多久睡着</div><span class="val stepval" id="d-lat"></span><div class="stepper"><button data-step="lat,-5" aria-label="减少">−</button><button data-step="lat,5" aria-label="增加">+</button></div></div>
+      <div class="row"><div class="grow">夜里醒了几次</div><span class="val stepval" id="d-wakes"></span><div class="stepper"><button data-step="wakes,-1" aria-label="减少">−</button><button data-step="wakes,1" aria-label="增加">+</button></div></div>
+    </div>
+    <p class="gt">标签（可多选）</p><div class="card chips">${TAGS.map(t => `<button class="chip ${draft.tags.includes(t)?'on':''}" data-tag="${esc(t)}">${esc(t)}</button>`).join('')}</div>
+    <p class="gt">备注</p><div class="card"><textarea id="d-note" rows="3" placeholder="做了什么梦、半夜醒了几次……">${esc(draft.note)}</textarea></div>
+    <p class="err" id="d-err"></p>
+    ${isNew ? '' : `<div class="btns"><button class="secondary danger" data-act="del">删除这条记录</button></div>`}`;
+  updDur(); updDetail();
+  $('#scrim').classList.add('on'); $('#sheet').classList.add('on'); $('#sheet').scrollTop = 0;
+}
+function closeSheet(){ $('#scrim').classList.remove('on'); $('#sheet').classList.remove('on'); draft = null; }
+function updDetail(){
+  $('#d-lat').textContent = draft.lat == null ? '没记' : draft.lat + ' 分钟';
+  $('#d-wakes').textContent = draft.wakes == null ? '没记' : draft.wakes + ' 次';
+}
+function updDur(){
+  const s = fromInput($('#d-start').value), e = fromInput($('#d-end').value);
+  const ok = !isNaN(s) && !isNaN(e) && e > s;
+  $('#d-dur').textContent = ok ? durShort((e-s)/MIN) : '—:—';
+  $('#d-day').textContent = ok ? '算在 ' + dlabel(e) : '';
+  $('#d-err').textContent = '';
+}
+function saveDraft(){
+  const s = fromInput($('#d-start').value), e = fromInput($('#d-end').value), err = $('#d-err');
+  if(isNaN(s) || isNaN(e)) return err.textContent = '请填好入睡和起床时间';
+  if(e <= s) return err.textContent = '起床时间要晚于入睡时间';
+  if(e - s > 20*60*MIN) return err.textContent = '一次睡眠不能超过 20 小时，请检查日期';
+  if(e > Date.now() + 5*MIN) return err.textContent = '起床时间不能在未来';
+  const rec = { id: draft.id || uid(), start: s, end: e, q: draft.q, tags: draft.tags, note: $('#d-note').value.trim(), lat: draft.lat, wakes: draft.wakes };
+  const i = S.recs.findIndex(r => r.id === rec.id);
+  if(i >= 0) S.recs[i] = rec; else S.recs.push(rec);
+  if(draft.fromActive) S.active = null;
+  save(); closeSheet(); render();
+  toast(`已记录 ${durTxt(mins(rec))}`);
+}
+
+/* ---------- toast ---------- */
+let toastT = 0;
+function toast(msg, act, fn){
+  const t = $('#toast');
+  t.innerHTML = esc(msg) + (act ? `<button>${esc(act)}</button>` : '');
+  if(act) t.querySelector('button').onclick = () => { t.classList.remove('on'); fn(); };
+  t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), act ? 5000 : 2500);
+}
+
+/* ---------- backup ---------- */
+function exportData(){
+  const name = `睡眠记录-${dkey(Date.now())}.json`;
+  const blob = new Blob([JSON.stringify(S, null, 1)], { type: 'application/json' });
+  try{
+    const file = new File([blob], name, { type: 'application/json' });
+    if(navigator.canShare && navigator.canShare({ files: [file] })){ navigator.share({ files: [file], title: name }).catch(() => {}); return; }
+  }catch(e){}
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+$('#file').addEventListener('change', async e => {
+  const f = e.target.files[0]; e.target.value = '';
+  if(!f) return;
+  try{
+    const d = JSON.parse(await f.text());
+    const recs = (Array.isArray(d) ? d : d.recs || []).filter(validRec);
+    if(!recs.length) return toast('这个文件里没有睡眠记录');
+    if(!confirm(`恢复 ${recs.length} 条记录？同一条会被覆盖，其他记录保留。`)) return;
+    const byId = new Map(S.recs.map(r => [r.id, r]));
+    for(const r of recs){ if(!r.id) r.id = uid(); byId.set(r.id, { id: r.id, start: r.start, end: r.end, q: +r.q || 0, tags: Array.isArray(r.tags) ? r.tags : [], note: String(r.note || ''), lat: r.lat == null ? null : +r.lat || 0, wakes: r.wakes == null ? null : +r.wakes || 0 }); }
+    S.recs = [...byId.values()];
+    if(!Array.isArray(d)){ if(d.goal) S.goal = +d.goal; if(d.bed) S.bed = d.bed; if(d.wake) S.wake = d.wake; }
+    save(); render(); toast(`已恢复 ${recs.length} 条`);
+  }catch(err){ toast('读不了这个文件'); }
+});
+
+/* ---------- events ---------- */
+document.addEventListener('click', e => {
+  const b = e.target.closest('button,[data-edit]');
+  if(!b) { if(e.target.id === 'scrim') closeSheet(); return; }
+  const ds = b.dataset;
+  if(ds.tab){
+    tab = ds.tab; sel = -1;
+    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t === b));
+    document.querySelectorAll('.view').forEach(v => v.classList.toggle('on', v.id === 'v-' + tab));
+    render(); window.scrollTo(0, 0); return;
+  }
+  if(ds.edit){ const r = S.recs.find(x => x.id === ds.edit); if(r) openSheet(r); return; }
+  if(ds.n){ trendN = +ds.n; sel = -1; render(); return; }
+  if(ds.wpset){ WP.cur = ds.wpset; saveWp(); paintWp(); render(); return; }
+  if(ds.wpdel){ if(confirm('删除这张壁纸？')) delWp(ds.wpdel); return; }
+  if(ds.step && draft){
+    const [k, dv] = ds.step.split(','), cur = draft[k], top = k === 'lat' ? 180 : 20;
+    const next = cur == null ? Math.max(0, +dv) : cur + +dv;
+    draft[k] = next < 0 ? null : Math.min(top, next); updDetail(); return;
+  }
+  if(ds.goal){ S.goal = Math.max(240, Math.min(720, S.goal + +ds.goal)); save(); render(); return; }
+  if(ds.q && draft){ draft.q = draft.q === +ds.q ? 0 : +ds.q; document.querySelectorAll('[data-q]').forEach(x => x.classList.toggle('on', +x.dataset.q === draft.q)); return; }
+  if(ds.tag && draft){ const t = ds.tag, i = draft.tags.indexOf(t); if(i >= 0) draft.tags.splice(i, 1); else draft.tags.push(t); b.classList.toggle('on', i < 0); return; }
+  switch(ds.act){
+    case 'sleep': S.active = { start: Date.now() }; save(); render(); toast('晚安 🌙'); break;
+    case 'wake': openSheet({ start: S.active.start, end: Date.now() }, true); break;
+    case 'cancel': {
+      const prev = S.active; S.active = null; save(); render();
+      toast('已取消', '撤销', () => { S.active = prev; save(); render(); });
+      break;
+    }
+    case 'add': {
+      const today = startOfDay(Date.now());
+      let end = today + tmin(S.wake)*MIN; if(end > Date.now()) end -= 1440*MIN;
+      let start = startOfDay(end) + tmin(S.bed)*MIN; if(start >= end) start -= 1440*MIN;
+      openSheet({ start, end }); break;
+    }
+    case 'close': closeSheet(); break;
+    case 'save': saveDraft(); break;
+    case 'del': {
+      if(!draft || !confirm('删除这条记录？')) return;
+      const i = S.recs.findIndex(r => r.id === draft.id); if(i < 0) return;
+      const [gone] = S.recs.splice(i, 1); save(); closeSheet(); render();
+      toast('已删除', '撤销', () => { S.recs.push(gone); save(); render(); });
+      break;
+    }
+    case 'wpnext': stepWp(); break;
+    case 'wpadd': $('#wpfile').click(); break;
+    case 'export': exportData(); break;
+    case 'import': $('#file').click(); break;
+    case 'wipe':
+      if(!S.recs.length) return toast('没有可以清空的记录');
+      if(confirm(`清空全部 ${S.recs.length} 条记录？建议先导出备份。`) && confirm('真的清空吗？清空后无法恢复。')){ S.recs = []; S.active = null; save(); render(); toast('已清空'); }
+      break;
+  }
+});
+document.addEventListener('input', e => {
+  if(e.target.id === 'd-start' || e.target.id === 'd-end') updDur();
+  if(e.target.id === 'wp-blur'){
+    WP.blur = +e.target.value; $('#wp-blur-v').textContent = WP.blur;
+    $('#wp-prev').style.filter = `blur(${(WP.blur * .26).toFixed(1)}px)`;
+    document.documentElement.style.setProperty('--wpblur', WP.blur + 'px');
+  }
+});
+document.addEventListener('change', e => {
+  if(e.target.id === 't-bed' && e.target.value){ S.bed = e.target.value; save(); }
+  if(e.target.id === 't-wake' && e.target.value){ S.wake = e.target.value; save(); }
+  if(e.target.id === 'wp-blur') saveWp();
+  if(e.target.id === 'wpfile'){ const fs = [...e.target.files]; e.target.value = ''; if(fs.length) addWp(fs); }
+});
+// chart reading: tap or hover a column
+function pickAt(e){
+  const svg = e.target.closest('[data-chart]'); if(!svg) return;
+  const rect = svg.getBoundingClientRect(), vb = svg.viewBox.baseVal;
+  const x = (e.clientX - rect.left) * vb.width / rect.width;
+  const i = Math.floor((x - +svg.dataset.padl) / +svg.dataset.cw);
+  if(i < 0 || i >= +svg.dataset.n) return;
+  if(i !== sel){ sel = i; renderTrend(); }
+}
+$('#v-trend').addEventListener('pointerdown', pickAt);
+$('#v-trend').addEventListener('pointermove', e => { if(e.pointerType === 'mouse') pickAt(e); });
+$('#v-trend').addEventListener('pointerleave', e => { if(e.pointerType === 'mouse' && sel >= 0){ sel = -1; renderTrend(); } });
+
+setInterval(() => { if(tab === 'home' && S.active && !document.hidden) renderHome(); }, 20000);
+document.addEventListener('visibilitychange', () => { if(!document.hidden){ S = load(); render(); } });
+let rz = 0; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if(tab === 'trend') renderTrend(); }, 150); });
+
+paintWp();
+render();
+loadWp().then(() => { paintWp(); if(tab === 'set') render(); });
+if('serviceWorker' in navigator && location.protocol === 'https:'){ navigator.serviceWorker.register('sw.js').catch(() => {}); }
+</script>
+</body>
+</html>
