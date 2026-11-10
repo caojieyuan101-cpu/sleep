@@ -229,6 +229,7 @@ input[type=range]{width:100%;accent-color:var(--accent);height:28px;margin:0}
 
 <script>
 'use strict';
+const VER = '6 · 11月10日';   // shown in Settings; bump with CACHE in sw.js
 const LS = 'sleep.v1';
 const MIN = 60000;
 const WD = '日一二三四五六';
@@ -735,7 +736,7 @@ function renderSet(){
     </div>
     <p class="gf">换手机或清理 Safari 数据之前，先导出一份备份。恢复时同一条记录会被覆盖，其他记录保留。</p>
     <p class="gt">安装</p><div class="card pad" style="font-size:15px;color:var(--label2);line-height:1.6">在 iPhone 的 Safari 里打开本页，点分享按钮 → “添加到主屏幕”，之后断网也能用。</div>
-    <p class="gf">“教室晚霞”这张照片来自小红书 @September47_。</p>`;
+    <p class="gf">“教室晚霞”这张照片来自小红书 @September47_。<br>版本 ${VER}</p>`;
 }
 
 function render(){
@@ -944,7 +945,19 @@ let rz = 0; window.addEventListener('resize', () => { clearTimeout(rz); rz = set
 paintWp();
 render();
 loadWp().then(() => { paintWp(); if(tab === 'set') render(); });
-if('serviceWorker' in navigator && location.protocol === 'https:'){ navigator.serviceWorker.register('sw.js').catch(() => {}); }
+if('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')){
+  // look for a new version every time the app comes to the front, and switch to it as soon as it is ready
+  navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(reg => {
+    document.addEventListener('visibilitychange', () => { if(!document.hidden) reg.update().catch(() => {}); });
+  }).catch(() => {});
+  const had = !!navigator.serviceWorker.controller; let reloaded = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if(!had || reloaded) return;
+    reloaded = true;
+    if(draft){ toast('有新版本，关掉这个窗口后重新打开就能用'); return; }
+    location.reload();
+  });
+}
 </script>
 </body>
 </html>
