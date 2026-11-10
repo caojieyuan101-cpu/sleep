@@ -1,6 +1,6 @@
 """App icons: two overlapping circles on warm paper - a sunset disc (peach to pink) and a lavender disc,
 multiplied where they overlap the way inks do - over one fine ink line for the horizon, with a faint grain.
-Run: python3 tools/icons.py (needs numpy and Pillow). Writes icon-180/192/512.png at the site root."""
+Run: python3 tools/icons.py (needs numpy and Pillow). Writes paper-180/192/512.png at the site root (a new design gets new file names, so no cache can serve the old picture)."""
 import os
 import numpy as np
 from PIL import Image
@@ -43,5 +43,5 @@ a = np.asarray(big, np.float32) / 255
 a += np.random.default_rng(7).normal(0, .018, (1024, 1024, 1)).astype(np.float32)      # grain
 big = Image.fromarray((np.clip(a, 0, 1) * 255).astype(np.uint8))
 for s in (180, 192, 512):
-    big.resize((s, s), Image.LANCZOS).save(os.path.join(OUT, 'icon-%d.png' % s), optimize=True)
+    big.resize((s, s), Image.LANCZOS).save(os.path.join(OUT, 'paper-%d.png' % s), optimize=True)
 print('icons written to', OUT)

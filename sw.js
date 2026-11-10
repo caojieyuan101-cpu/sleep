@@ -1,6 +1,6 @@
 // Bump the version whenever a file changes (and VER in index.html), so installed copies pick it up.
-const CACHE = 'sleep-v7';
-const ASSETS = ['./', './index.html', './manifest.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png', './bg-classroom.jpg'];
+const CACHE = 'sleep-v8';
+const ASSETS = ['./', './index.html', './manifest.webmanifest', './paper-180.png', './paper-192.png', './paper-512.png', './bg-classroom.jpg'];
 
 self.addEventListener('install', e => {
   // cache: 'reload' skips the browser's HTTP cache, so a new version never stores a stale page
