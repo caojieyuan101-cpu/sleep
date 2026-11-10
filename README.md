@@ -17,5 +17,5 @@
 
 - 直接改 `index.html`，不需要构建
 - 改完把 `sw.js` 里的 `CACHE` 和 `index.html` 里的 `VER` 一起加一；已安装的手机下次切回 app 时会自动换成新版本（设置页底部能看到版本号）
-- 图标由 `python3 tools/icons.py` 生成（需要 Pillow）
+- 图标（纸感叠圆）由 `python3 tools/icons.py` 生成（需要 numpy 和 Pillow）
 - 自带的照片 `bg-classroom.jpg` 来自小红书 @September47_

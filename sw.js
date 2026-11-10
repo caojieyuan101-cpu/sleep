@@ -1,5 +1,5 @@
 // Bump the version whenever a file changes (and VER in index.html), so installed copies pick it up.
-const CACHE = 'sleep-v6';
+const CACHE = 'sleep-v7';
 const ASSETS = ['./', './index.html', './manifest.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png', './bg-classroom.jpg'];
 
 self.addEventListener('install', e => {
